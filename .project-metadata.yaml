@@ -1,0 +1,53 @@
+name: Mistral 7B Instruct - adm_kai_4118343
+description: Chatbot using Mistral 7B model with features like Sliding Window Attention & Grouped Query Attention for faster inference.
+author: HuggingFace Space
+specification_version: 1.0
+prototype_version: 1.0
+
+environment_variables:
+    cpu:
+      default: 2
+      description: Number of CPUs
+    memory:
+      default: 16
+      description: Memory in GB
+    gpu:
+      default: 0
+      description: Number of GPUs
+    HF_TOKEN:
+      default:
+      description: Hugging Face Token (HuggingFace->Settings->Access Tokens)
+      required: true
+      tooltip: Get your token from HuggingFace->Settings->Access Tokens
+    HUGGING_FACE_HUB_TOKEN:
+      default:
+      description: Hugging Face Token (HuggingFace->Settings->Access Tokens)
+      required: true
+      tooltip: Get your token from HuggingFace->Settings->Access Tokens
+
+runtimes:
+  - editor: PBJ Workbench
+    kernel: Python 3.9
+    edition: Nvidia GPU
+
+tasks:
+  - type: run_session
+    name: Install Dependencies
+    script: .cml_dependencies_script_001.py
+    kernel: python3
+    cpu: 2
+    memory: 16
+    gpu: 0
+
+  - type: start_application
+    name: Application to serve UI
+    short_summary: Create an application to serve the UI
+    subdomain: cml-space
+    script: .cml_space_launcher_001.py
+    cpu: 2
+    memory: 16
+    gpu: 0
+    environment_variables:
+      TASK_TYPE: START_APPLICATION
+      CDSW_HF_SPACE: true
+      GRADIO_SERVER_PORT: 8100
