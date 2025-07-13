@@ -29,8 +29,6 @@ def generate(
         temperature=temperature,
         max_tokens=max_new_tokens,
         top_p=top_p,
-        # repetition_penalty=repetition_penalty, # Still keep this commented out as per previous issue
-        # do_sample=True, # Often implied with temperature > 0 and top_p < 1
         seed=42,
     )
 
@@ -42,8 +40,6 @@ def generate(
         messages=messages_for_api,  # This is the crucial change
         **generate_kwargs,
         stream=True,
-        # details=True, # Together AI might not support 'details' in this context, causing issues
-        # return_full_text=False # Together AI might not support 'return_full_text'
     )
     output = ""
 
