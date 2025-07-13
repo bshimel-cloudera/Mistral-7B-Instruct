@@ -1,18 +1,21 @@
 from huggingface_hub import InferenceClient
 import gradio as gr
+import os
 
 client = InferenceClient(
-    "mistralai/Mistral-7B-Instruct-v0.3"
+    "mistralai/Mistral-7B-Instruct-v0.3",
+    token=os.environ.get("HF_TOKEN"),
+    provider="together"
 )
 
 
 def format_prompt(message, history):
-  prompt = "<s>"
-  for user_prompt, bot_response in history:
-    prompt += f"[INST] {user_prompt} [/INST]"
-    prompt += f" {bot_response}</s> "
-  prompt += f"[INST] {message} [/INST]"
-  return prompt
+    messages = []
+    for user_prompt, bot_response in history:
+        messages.append({"role": "user", "content": user_prompt})
+        messages.append({"role": "assistant", "content": bot_response})
+    messages.append({"role": "user", "content": message})
+    return messages
 
 def generate(
     prompt, history, temperature=0.9, max_new_tokens=256, top_p=0.95, repetition_penalty=1.0,
@@ -24,21 +27,31 @@ def generate(
 
     generate_kwargs = dict(
         temperature=temperature,
-        max_new_tokens=max_new_tokens,
+        max_tokens=max_new_tokens,
         top_p=top_p,
-        repetition_penalty=repetition_penalty,
-        do_sample=True,
+        # repetition_penalty=repetition_penalty, # Still keep this commented out as per previous issue
+        # do_sample=True, # Often implied with temperature > 0 and top_p < 1
         seed=42,
     )
 
-    formatted_prompt = format_prompt(prompt, history)
+    # Get the list of message dictionaries
+    messages_for_api = format_prompt(prompt, history)
 
-    stream = client.text_generation(formatted_prompt, **generate_kwargs, stream=True, details=True, return_full_text=False)
+    # Pass the messages list to the create method
+    stream = client.chat.completions.create(
+        messages=messages_for_api,  # This is the crucial change
+        **generate_kwargs,
+        stream=True,
+        # details=True, # Together AI might not support 'details' in this context, causing issues
+        # return_full_text=False # Together AI might not support 'return_full_text'
+    )
     output = ""
 
-    for response in stream:
-        output += response.token.text
-        yield output
+    for chunk in stream:
+        # Check if the chunk contains choices and message content
+        if chunk.choices and chunk.choices[0].delta.content:
+            output += chunk.choices[0].delta.content
+            yield output
     return output
 
 
